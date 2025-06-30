@@ -1,0 +1,27 @@
+version: "3.9"
+services:
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes: [".:/code"]
+    depends_on: [redis]
+    environment:
+      - DJANGO_SETTINGS_MODULE=celeryTR.settings
+    ports:
+      - 8000:8000
+
+  worker:
+    build: .
+    command: celery -A celeryTR worker -l info
+    volumes: [".:/code"]
+    depends_on: [redis, web]
+
+  beat:
+    build: .
+    command: celery -A celeryTR beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes: [".:/code"]
+    depends_on: [redis, web]
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
